@@ -162,4 +162,3 @@ spring:
 - 示例数据：`backend/db/demo-data.sql`
 - 后端配置：`backend/src/main/resources/application.yml`
 - 数据库设计说明书：见之前的文档
-
