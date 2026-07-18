@@ -1,11 +1,9 @@
 <template>
   <section class="page-template consult-page">
-    <div class="hero-copy centered">
+    <div class="hero-copy centered consult-hero">
       <p class="eyebrow">LEGAL CONSULTATION</p>
       <h2>把劳动合同问题说清楚</h2>
-      <p>
-        根据现行法律法规、司法解释和人社政策，为你整理判断依据、处理步骤和证据清单。
-      </p>
+      <p>根据现行法律法规、司法解释和人社政策，为你整理判断依据、处理步骤和证据清单。</p>
     </div>
 
     <el-card class="ask-card" shadow="never">
