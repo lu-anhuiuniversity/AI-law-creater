@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: rag-kb-demo
+
+server:
+  port: 8080
+
+rag-kb-demo:
+  scenario: eos-repair-work-order-and-enterprise-maintenance-documents
