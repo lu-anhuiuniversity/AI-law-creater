@@ -4,7 +4,6 @@ import {
   ChatDotRound,
   Collection,
   DocumentChecked,
-  Files,
   FolderOpened,
   Memo,
   Monitor,
@@ -12,6 +11,7 @@ import {
   Warning
 } from '@element-plus/icons-vue'
 import { getHealthStatus } from './api/http'
+import KnowledgeDocsView from './views/KnowledgeDocsView.vue'
 
 const activeView = ref('consult')
 const health = ref({ status: 'checking', text: '正在检查后端服务' })
@@ -68,13 +68,6 @@ const processSteps = [
 ]
 
 const evidenceList = ['劳动合同或录用通知', '工资流水', '考勤记录', '加班通知', '聊天记录', '工作成果', '社保缴纳记录', '离职证明或解除通知']
-
-const knowledgeDocs = [
-  { title: '中华人民共和国劳动合同法', type: '法律法规', scope: '全国', chunks: 128, status: '已索引', updated: '2026-07-18' },
-  { title: '劳动争议司法解释汇编', type: '司法解释', scope: '全国', chunks: 86, status: '待复核', updated: '2026-07-17' },
-  { title: '加班工资高频问答', type: 'FAQ', scope: '项目资料', chunks: 24, status: '已启用', updated: '2026-07-16' }
-]
-
 const healthType = computed(() => {
   if (health.value.status === 'ok') return 'success'
   if (health.value.status === 'checking') return 'warning'
@@ -278,23 +271,7 @@ onMounted(checkBackend)
         </section>
       </section>
 
-      <section v-else-if="activeView === 'admin'" class="panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">知识库管理</p>
-            <h3>法规、政策、FAQ 入库状态</h3>
-          </div>
-          <el-button type="primary" :icon="Files">上传资料</el-button>
-        </div>
-        <el-table :data="knowledgeDocs" stripe>
-          <el-table-column prop="title" label="文档标题" min-width="220" />
-          <el-table-column prop="type" label="来源类型" width="120" />
-          <el-table-column prop="scope" label="适用范围" width="120" />
-          <el-table-column prop="chunks" label="片段数" width="100" />
-          <el-table-column prop="status" label="索引状态" width="120" />
-          <el-table-column prop="updated" label="最近更新" width="140" />
-        </el-table>
-      </section>
+      <KnowledgeDocsView v-else-if="activeView === 'admin'" />
 
       <section v-else class="panel placeholder-panel">
         <p class="eyebrow">模块预览</p>

@@ -24,3 +24,8 @@ mybatis-plus:
 
 elasticsearch:
   uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+
+app:
+  admin:
+    accounts: ${ADMIN_ACCOUNTS:}
+    token: ${ADMIN_API_TOKEN:}

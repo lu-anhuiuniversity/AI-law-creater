@@ -2,7 +2,7 @@
 
 本项目是一个基于大模型与 RAG 的劳动合同法律信息检索与咨询辅助系统。系统定位为学生实训项目和法律咨询原型，不替代律师、仲裁机构或法院意见。
 
-当前已完成后端基础工程骨架和前端咨询工作台原型，后续可继续补充知识库入库、检索增强问答、依据引用、问答历史和管理后台真实接口。
+当前已完成后端知识库文档 CRUD 接口、配置型 RBAC、管理员审计日志，以及前端知识库文档的查询、新增、详情、编辑、删除和状态更新页面。后续可继续补充完整 RAG 入库链路、正式登录中心、依据引用和问答历史。
 
 ## 项目结构
 
@@ -70,6 +70,15 @@ cd frontend
 npm.cmd run build
 ```
 
+测试：
+
+```powershell
+cd frontend
+npm.cmd test
+```
+
+后端管理员接口使用 `X-Admin-Token`，请求审计信息会写入后端日志，但不会记录令牌原文。
+
 ## 健康检查
 
 后端接口：
@@ -113,7 +122,7 @@ server: {
 
 ### 2. 后端 CORS
 
-`backend/src/main/java/com/teddy/legal/config/WebMvcConfig.java` 中允许本地前端端口访问 `/api/**`：
+`backend/src/main/java/com/laborlaw/ragkbdemo/config/WebMvcConfig.java` 中允许本地前端端口访问 `/api/**`：
 
 ```java
 registry.addMapping("/api/**")
@@ -144,6 +153,13 @@ $env:ELASTICSEARCH_URIS="http://localhost:9200"
 ```
 
 不要把真实密码、Token 或 API Key 写入 Git。
+管理员接口需要显式配置访问令牌。后端新配置使用 `ADMIN_ACCOUNTS`，前端使用其中一个账户的 token 配置 `VITE_ADMIN_API_TOKEN`。旧环境仍兼容 `ADMIN_API_TOKEN`：
+
+```powershell
+$env:ADMIN_ACCOUNTS="editor|replace-with-editor-token|KNOWLEDGE_READ,KNOWLEDGE_WRITE;reader|replace-with-reader-token|KNOWLEDGE_READ"
+```
+
+前端可以复制 `frontend/.env.example` 为本地环境文件，并填写 `editor` 或其他具有所需角色的账户 token。未配置后端令牌时，`/api/admin/**` 会返回 `503`；令牌缺失或不匹配时返回 `401`。
 
 ## MySQL 初始化
 

@@ -78,7 +78,7 @@ Last updated: 2026-07-18
 
 - Created backend project at `C:\Users\Teddy\Documents\proj1\backend`.
 - Project name/artifact: `legal-contract-assistant`.
-- Package root: `com.teddy.legal`.
+- Package root: `com.laborlaw.ragkbdemo`.
 - Reserved packages: `controller`, `service`, `mapper`, `entity`, `dto`, `vo`, `config`, `client`.
 - Health endpoint: `GET /api/health`.
 - Health response verified by running the jar locally: `{"status":"ok"}`.
@@ -121,3 +121,36 @@ Last updated: 2026-07-18
   - Fix: verified that existing `8080` responded to `/api/health`; used temporary port `8081` to validate the newly added CORS config without stopping the user's process.
 - Issue: CORS can fail when frontend and backend run on different local ports.
   - Solution: frontend dev proxy handles `/api` requests during Vite development; backend `WebMvcConfig` also allows local frontend origins for direct API calls.
+## 2026-07-20 P0 处理记录
+
+- 已将 `backend/src/main/resources/application-local.yml` 中的本地敏感值改为环境变量占位，并新增 `application-local.example.yml`。
+- 已将知识库文档管理页面接入真实接口，入口在 `frontend/src/App.vue`，页面为 `frontend/src/views/KnowledgeDocsView.vue`。
+- 已新增 `frontend/src/api/knowledgeDocuments.js`、Vitest 最小配置和 `KnowledgeDocsView.test.js`。
+- `/api/admin/**` 已增加 `X-Admin-Token` 基础访问控制，令牌由 `ADMIN_API_TOKEN` 注入，前端使用 `VITE_ADMIN_API_TOKEN`。
+- 关键验证：`frontend npm test`、`frontend npm run build`、`backend mvn test` 均已验证通过；前端构建仍有 chunk 体积警告。
+- 当前后续重点：正式认证/RBAC、异常统一处理、包名和构建产物治理。
+## 2026-07-20 P1 优化记录
+
+- 全局异常处理已覆盖 JSON 解析错误、请求参数错误、数据库异常和未预期异常；客户端统一收到结构化错误。
+- 删除接口已移除局部异常吞掉逻辑，统一交由全局异常处理器处理。
+- 删除旧的 `com.teddy.legal` 源码、配置和测试入口，正式包名统一为 `com.laborlaw.ragkbdemo`，Maven groupId 统一为 `com.laborlaw`。
+- `backend/target` 与 `frontend/dist` 已从 Git 索引移除，`.gitignore` 补充 `.vite/` 和 `coverage/`。
+- 知识库页面测试扩展到 6 个场景，覆盖详情接口、失败提示和新增后刷新。
+- 关键验证：`backend mvn test`、`frontend npm test`、`frontend npm run build` 均通过；构建仍保留 chunk 体积警告。
+## 2026-07-20 配置型 RBAC 记录
+
+- 管理员鉴权从单 token 升级为 `ADMIN_ACCOUNTS` 配置型 RBAC。
+- 账户格式：`username|token|ROLE_1,ROLE_2`。
+- 当前角色：`ADMIN`、`KNOWLEDGE_READ`、`KNOWLEDGE_WRITE`。
+- GET/HEAD 需要 `KNOWLEDGE_READ`，POST/PUT/PATCH/DELETE 需要 `KNOWLEDGE_WRITE`。
+- `ADMIN_API_TOKEN` 保留为旧环境兼容回退，默认不配置。
+- 审计日志增加 actor 和 roles，不记录 token。
+- 构建产物去跟踪提交：`1346c59 chore: stop tracking generated build artifacts`。
+- 用户要求暂不继续处理前端体积问题。
+## 2026-07-20 知识库文档 CRUD 记录
+
+- `frontend/src/views/KnowledgeDocsView.vue` 已支持新增、查询/详情、编辑、删除和状态更新。
+- 编辑会先调用详情接口加载完整元数据，再调用 PUT 更新。
+- 删除使用确认弹窗，成功后自动刷新当前分页。
+- 状态下拉使用 PATCH 状态接口，失败时不直接修改列表数据。
+- 前端测试扩展到编辑、删除、状态更新，当前 10 个测试通过。
