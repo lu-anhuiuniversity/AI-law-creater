@@ -1,4 +1,6 @@
-package com.laborlaw.ragkbdemo.controller;
+﻿from pathlib import Path
+p = Path(r'G:\AI-law-creater\backend\src\main\java\com\laborlaw\ragkbdemo\controller\HealthController.java')
+p.write_text('''package com.laborlaw.ragkbdemo.controller;
 
 import com.laborlaw.ragkbdemo.vo.ApiResponse;
 import com.laborlaw.ragkbdemo.vo.HealthVO;
@@ -15,3 +17,5 @@ public class HealthController {
         return ApiResponse.success(new HealthVO("ok"));
     }
 }
+''', encoding='utf-8')
+print('updated', p)

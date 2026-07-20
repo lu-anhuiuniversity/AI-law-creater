@@ -1,4 +1,6 @@
-package com.laborlaw.ragkbdemo.controller;
+﻿from pathlib import Path
+p = Path(r'G:\AI-law-creater\backend\src\test\java\com\laborlaw\ragkbdemo\controller\HealthControllerTest.java')
+p.write_text('''package com.laborlaw.ragkbdemo.controller;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,3 +30,5 @@ class HealthControllerTest {
                 .andExpect(jsonPath("$.data.status").value("ok"));
     }
 }
+''', encoding='utf-8')
+print('updated', p)
