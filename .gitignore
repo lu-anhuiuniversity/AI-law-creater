@@ -14,6 +14,8 @@ Thumbs.db
 # Frontend build artifacts
 node_modules/
 dist/
+.vite/
+coverage/
 
 # Local secrets
 .env
