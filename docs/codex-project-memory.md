@@ -154,3 +154,95 @@ Last updated: 2026-07-18
 - 删除使用确认弹窗，成功后自动刷新当前分页。
 - 状态下拉使用 PATCH 状态接口，失败时不直接修改列表数据。
 - 前端测试扩展到编辑、删除、状态更新，当前 10 个测试通过。
+
+## 2026-07-21 Risk Review Update
+
+- User asked to inspect `G:\LaborLawAI` and write potential project risks into `项目风险问题分析.md`.
+- Updated `项目风险问题分析.md` with a fresh current-state review covering Git-tracked generated artifacts, local env/auth files, backend test failure, public QA/knowledge endpoints, divergent DB scripts, RBAC limitations, validation gaps, delete/index lifecycle risks, missing CI, frontend size, and demo-only UI risks.
+- Verification evidence collected:
+  - `git ls-files` still tracks `frontend/node_modules` (11712 files), `backend/target` (63 files), `frontend/dist` (1 file), `.npm-global`, `.npm-cache`, `.lark-auth`, `.idea`, `.vscode`, and local env/config files.
+  - Running validation initially modified tracked `backend/target` and `frontend/dist`, confirming generated artifact tracking risk; those generated changes were restored with `git restore -- backend/target frontend/dist` before editing docs.
+  - `frontend`: `npm audit --omit=dev` and `npm audit` both reported 0 vulnerabilities; `npm test` passed with 2 test files and 10 tests; `npm run build` succeeded but output large CSS/main JS sizes and Rollup PURE-comment warnings.
+  - `backend`: `mvn test` failed with ApplicationContext errors because WebMvc slice tests load scanned MyBatis mappers without `sqlSessionFactory/sqlSessionTemplate`.
+- Do not record raw local passwords, tokens, QR auth values, or secrets when continuing this risk work.
+
+## 2026-07-21 Read-only backend query APIs
+
+- User requested paginated read-only endpoints for `kb_document`, `kb_chunk_ref`, `qa_answer`, and `qa_answer_citation` using MyBatis-Plus, DTO/Entity/VO separation, `ApiResponse`, `page_no`/`page_size`, id-desc ordering, and QA record question assembly via `qa_message.content_redacted`.
+- Existing backend source already had the four public read-only controllers/services/DTOs/VOs: `/api/knowledge/documents`, `/api/knowledge/chunk-refs`, `/api/qa/records`, `/api/qa/citations`.
+- Added `backend/src/test/java/com/laborlaw/ragkbdemo/controller/ReadOnlyQueryControllerTest.java` covering all four endpoints, unified `code=0` responses, JSON field names, pagination params, filters, and `question` field in QA record VO.
+- Fixed WebMvc slice test pollution by moving `@MapperScan("com.laborlaw.ragkbdemo.mapper")` from `RagKbDemoApplication` to `MybatisPlusConfig`; full app still loads mapper scan via normal configuration, while MVC slice tests no longer instantiate mapper factory beans without MyBatis session factory.
+- Verification: `cd backend && mvn test` passed with 35 tests, 0 failures, 0 errors, 0 skipped. Maven still emits existing `@MockBean` deprecation warnings.
+- Running Maven modifies tracked `backend/target` artifacts due existing repository hygiene issue; those generated changes were restored after verification.
+
+## 2026-07-21 Frontend knowledge query pages
+
+- User requested wiring four read-only query APIs into frontend: `kb_document`, `kb_chunk_ref`, `qa_answer`, `qa_answer_citation`.
+- Existing files already present: `frontend/src/api/knowledgeSources.js`, `frontend/src/api/qaHistory.js`, `frontend/src/views/KnowledgeSourcesView.vue`, `frontend/src/views/QaHistoryView.vue`, and `App.vue` imports/routes for `sources` and `history`.
+- Added row-click detail behavior to all four Element Plus tables: documents, chunks, QA records, citations. Kept existing Chinese detail buttons.
+- Renamed chunk detail dialog title from `分片详情` to `知识分片详情` for clearer Chinese UI.
+- Added tests:
+  - `KnowledgeSourcesView.test.js`: tabs, Chinese labels, list data, filters/pagination API params, row-click detail dialogs, no `标题(title)` display.
+  - `QaHistoryView.test.js`: tabs, Chinese labels, list data, filters/pagination API params, row-click detail dialogs, no `标题(title)` display.
+  - Updated `App.test.js` to verify `sources` and `history` render real pages instead of placeholders.
+- Verification: `cd frontend && npm test` passed with 4 test files and 20 tests. `npm run build` passed; existing Rollup PURE-comment warnings remain. Restored generated `frontend/dist` changes after build because dist is still tracked in this repository.
+
+## 2026-07-21 README startup documentation
+
+- User requested creating `Changes.md` under `G:\LaborLawAI` and updating `README.md` with concrete backend/frontend startup steps.
+- Created `Changes.md` with a 2026-07-21 documentation change entry.
+- Updated README backend startup section with prerequisites, database initialization options, environment variables, `mvn spring-boot:run`, health-check curl, tests, package, and JAR run commands.
+- Updated README frontend startup section with Node/npm prerequisites, `.env` setup, `npm.cmd install`, `npm.cmd run dev`, default `http://localhost:5173` URL, tests, build, and preview commands.
+
+## 2026-07-21 KnowledgeDocs Chinese UI cleanup
+
+- User reported Knowledge Docs management showed labels like `标题（title）` and Element Plus pagination English text (`Total`, `/page`, `Go to`).
+- Updated `frontend/src/views/KnowledgeDocsView.vue` labels to remove database field names in parentheses, leaving Chinese-only labels in filter form, table columns, create/edit forms, and detail dialog.
+- Wrapped `App.vue` root with `el-config-provider` using Element Plus zh-cn locale and registered `ElConfigProvider` in `frontend/src/main.js`, so pagination text is Chinese in the actual app.
+- Updated `KnowledgeDocsView.test.js` and `App.test.js` to assert field-name suffixes and English pagination text are not visible.
+- Verification: `cd frontend && npm test` passed with 4 files / 20 tests; `npm run build` passed with existing Rollup PURE-comment warnings. Restored generated `frontend/dist` and `.vite` changes after build.
+
+## 2026-07-21 Local MySQL database import
+
+- User asked to import data into the local MySQL database using their local database password. Do not record the raw password.
+- Created/recreated `legal_contract_assistant` with utf8mb4 and imported `backend/db/init.sql` plus `backend/db/demo-data.sql`.
+- MySQL 8 rejected two composite current-version foreign keys because `ON DELETE SET NULL` included non-null primary key columns. Updated `backend/db/init.sql` to use `ON DELETE RESTRICT` for `fk_doc_current_version` and `fk_prompt_current_version`.
+- Verified the database has 25 tables. Imported row counts include `kb_document=10`, `kb_document_version=10`, `sys_account=1`, `qa_topic=10`; `kb_chunk_ref`, `qa_answer`, `qa_answer_citation`, and `qa_message` remain empty because the provided demo data only seeds knowledge documents and versions.
+- Verified key rows in `kb_document` and `kb_document_version` can be queried, and current-version constraints exist with `RESTRICT` delete rule.
+- Backend runtime should use environment variables for DB credentials instead of committing the local password to config files.
+
+## 2026-07-21 RAG AI connectivity backend
+
+- User requested backend integration for Elasticsearch, Embedding, and OpenAI-compatible chat connectivity.
+- Added `rag.ai` configuration in `backend/src/main/resources/application.yml` with environment-variable overrides for Elasticsearch URL/user/password, embedding base URL/API key/model/dimension, and chat base URL/API key/model.
+- Did not commit the provided Elasticsearch password; runtime should set `RAG_AI_ELASTICSEARCH_PASSWORD` externally.
+- Added `RagAiProperties`, `/api/ai/ping` controller, `AiPingService`, and VO records for per-component connectivity results.
+- `AiPingService` checks Elasticsearch via HTTP GET with optional Basic auth, embedding via POST `/embeddings` using default `qwen3-embedding:4b`, and chat via POST `/chat/completions`; API keys are only used in request headers and not logged.
+- Added controller and service tests. Service test uses a local lightweight HTTP server to verify requested paths and configured model names without calling real external services.
+- Verification: `cd backend && mvn test` passed with 38 tests; `mvn package -DskipTests` passed. Restored generated `backend/target` changes after verification.
+
+## 2026-07-21 RAG AI connectivity backend
+
+- User requested Spring Boot backend integration for Elasticsearch, Embedding, and OpenAI-compatible chat connectivity.
+- Added `rag.ai` settings to `backend/src/main/resources/application.yml` with environment-variable overrides for Elasticsearch URL/username/password, embedding base URL/api key/model/dimension, and chat base URL/api key/model. Do not store raw ES password or API keys in config.
+- Added `RagAiProperties`, `AiPingService`, `AiPingController`, `AiPingItemVO`, and `AiPingVO`.
+- New endpoint: `GET /api/ai/ping`, returning unified `ApiResponse` with `elasticsearch`, `embedding`, and `chat` item results. Each component returns independent ok/error status and clear message.
+- Embedding ping posts to `/embeddings` with model `qwen3-embedding:4b` by default. Chat ping posts to `/chat/completions` with OpenAI-compatible message payload. API keys are only sent in Authorization headers and are not logged.
+- Added controller and service tests for successful and partial-failure ping behavior.
+- Verification: `cd backend && mvn test` passed with 38 tests; `mvn package -DskipTests` passed. Restored generated `backend/target` changes after verification.
+
+## 2026-07-21 Backend startup constructor fix
+
+- `mvn spring-boot:run` failed because Spring could not instantiate `AiPingService`: the class had two constructors and neither was explicitly selected for dependency injection, producing `No default constructor found` and preventing `AiPingController` creation.
+- Added `@Autowired` to the production `AiPingService(RagAiProperties)` constructor while retaining the package-private constructor for HTTP-client unit tests.
+- Verification: full backend `mvn test` passed with 38 tests. A real `mvn spring-boot:run` launch completed, port 8080 is listening, and `GET /api/health` returned `code=0` with `data.status=ok`.
+
+## 2026-07-21 AI ping live integration
+
+- Live-tested local Ollama at `localhost:11434`: installed models include `qwen3-embedding:4b` and `qwen2.5:7b`.
+- Updated RAG embedding default model to the exact Ollama model name `qwen3-embedding:4b`.
+- Increased Elasticsearch request timeout to 15 seconds and local model request timeout to 3 minutes because first CPU model load exceeded the previous 8-second timeout.
+- Restored the correct Spring AI BOM and Ollama starter in `backend/pom.xml` after finding a local invalid dependency edit; the resulting pom matches repository baseline.
+- Direct live verification: embedding returned HTTP 200 with a 2560-dimension vector; chat returned HTTP 200 with model `qwen2.5:7b`.
+- Restarted backend with runtime environment configuration. `GET /api/ai/ping` now reports embedding and chat success.
+- Elasticsearch remains blocked externally: direct Basic Auth request to the provided `/es/` endpoint returns HTTP 401 with `unable to authenticate user [elastic]`. This requires a valid current ES password or server-side password reset; do not record the supplied raw password.
